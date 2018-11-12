@@ -31,28 +31,66 @@ declare function takeoffandsetup {
 	until alt:radar > 100 { lock throttle to twrToThrottle(1). }
 }
 
+declare function initscreen{
+	print("Forward velocity data: ") at (0,0).
+	print("Velocity:         | Target:        | PID output: ") at (0,1).
+
+	print("Pitch input data: ") at (0,3).
+	print("Current:          | Target:        | PID output: ") at (0,4).
+
+	print("Altitude PID data: ") at (0,6).
+	print("Altitude:         | Target:        | PID output: ") at (0,7).
+
+	print("Throttle input data: ") at (0,9).
+	print("Velocity:         | Target:        | PID output: ") at (0,10).
+
+	print("Lateral velocity data: ") at (0,12).
+	print("Velocity:         | Target:        | PID output: ") at (0,13).
+	
+	print("Roll input data: ") at (0,15).
+	print("Current:          | Target:        | PID output: ") at (0,16).
+
+	print("Yaw input data: ") at (0,18).
+	print("Heading:          | Target:        | PID output: ") at (0,19).
+
+
+}
+
 declare function updatescreen {
+	print(round((ship:velocity:surface * ship:facing:forevector), 2)) at (11,1).
+	print(round(targetForeSpeed, 2)) at (28,1).
+	print(round(foreSpeedPID:OUTPUT, 4)) at (49,1).
 
-	// print("Throttle: " + tval) at(0,1).
-	print("velocity PID Output: " + AltitudeToVelocityPID:OUTPUT + "                   ") at(0,2).
-	print("velocity PID Setpoint: " + AltitudeToVelocityPID:SETPOINT + "    ") AT(0,3).
-	print("Radar Altitude: " + alt:radar) at(0,4).
-	print("Position Error: " + error) at(0,5).
-	PRINT("Speed: " + verticalspeed) at(0,6).
-	print ("speed setpoint: " + VelocityToThrottlePID:SETPOINT) AT(0,7).
-	print("Velocity error: " + velocityError) at(0,8).
-	print("Roll PID setpoint: " + rollPID:SETPOINT) at (0,9).
-	print("Roll PID output: " + rollPID:OUTPUT) at (0,10).
-	print("roll PID error: " + rollError) at (0,11).
+	print(round(pitchPID:SETPOINT, 2)) at (11,4).
+	print(round((ship:velocity:surface * ship:facing:forevector),2)) at (28,4).
+	print(round(pitchPID:OUTPUT,4)) at (49,4).
+	
+	print(round(ALT:RADAR,2)) at (11,7).
+	print(round(targetheight,2)) at (28,7).
+	print(round(AltitudeToVelocityPID:OUTPUT,4)) at (49,7).
 
-	// print("Latitude: " + GeoCoordinates:LAT) at(0,9).
-	// print("Longitude: " + GeoCoordinates:LNG) at(0,10).
+	print(round(ship:verticalspeed,2)) at (11,10).
+	print(round(AltitudeToVelocityPID:OUTPUT,2)) at (28,10).
+	print(round(VelocityToThrottlePID:OUTPUT,2)) at (49,10).
+
+	print(round(latSpeedPID:SETPOINT,2)) at (28,13).
+	print(round((ship:velocity:surface * ship:facing:starvector),2)) at (11,13).
+	print(round(latSpeedPID:OUTPUT,4)) at (49,13).
+
+	print(round(rollPID:SETPOINT,2)) at (28,16).
+	print(round((VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90),2)) at (11,16).
+	print(round(rollPID:output,4)) at (49,16).
+
+	print(round(yawPID:SETPOINT,2)) at (28,19).
+	print(round(headin,2)) at (11,19).
+	print(round(yawPID:output,4)) at (49,19).
 
 }
 
 
 clearscreen.
 // takeoffandsetup().
+initscreen().
 
 SET targetZeroSpeedAltitude to 25. //SET target "zero speed altitude" (alt:radar is 19-20 when landed)
 SET landingModeTriggerspeed to -5. //SET speed at which landing mode will be trigggered
@@ -70,7 +108,7 @@ SET KpVT TO 0.2. SET KiVT TO 0.4. SET KdVT TO 0.0. SET minimumVT TO 0.1. SET max
 
 
 //forward velocity -> pitch angle PID
-SET KpForeSpeed TO 3. SET KiForeSpeed TO 0. SET KdForeSpeed TO 0.0. SET minimumForeSpeed TO -5. SET maximumForeSpeed TO 5.
+SET KpForeSpeed TO 10. SET KiForeSpeed TO 0. SET KdForeSpeed TO 0.0. SET minimumForeSpeed TO -5. SET maximumForeSpeed TO 5.
 //angle -> steering (pitch) ctrl
 SET KpPitch TO 0.15. SET KiPitch TO 0.1. SET KdPitch TO 0.17. SET minimumYAWctrl TO -0.5. SET maximumYAWctrl TO 0.5.
 
@@ -80,7 +118,7 @@ SET KpYaw TO 0.1. SET KiYaw TO 0.0. SET KdYaw TO 0.2. SET minimumYAWctrl TO -1. 
 
 
 //lateral velocity -> roll angle PID
-SET KpLatSpeed TO 0.1. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.0. SET minimumLatSpeed TO -5. SET maximumLatSpeed TO 5.
+SET KpLatSpeed TO 0.5. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.0. SET minimumLatSpeed TO -5. SET maximumLatSpeed TO 5.
 //angle -> steering (roll) PID
 SET KpROLL TO 0.02. SET KiROLL TO 0.18. SET KdROLL TO 0.06. SET minimumROLLctrl TO -1. SET maximumROLLctrl TO 1.
 
@@ -100,7 +138,7 @@ SET throttle to 0.
 brakes on.
 rcs on.
 SET runmode to 1.
-clearscreen.
+// clearscreen.
 SET targetheight to 300. //SET desired height.
 SET targetRoll to 0. //set target roll
 SET targetPitch to 0.
@@ -119,7 +157,7 @@ rcs off.
 // lock throttle to zeroAccelerationThrottle().
 // lock steering to up. //TODO comment this out
 // stage.
-// log "Time,Error" to PID.csv.
+
 until runmode = 0 {
 
 	//Update the throttle PID loop
