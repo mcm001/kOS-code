@@ -67,12 +67,23 @@ SET targetRoll to 0.
 SET KpAV TO 0.4. SET KiAV TO 0.0. SET KdAV TO 0. SET minimumAV TO -20. SET maximumAV TO 80.
 //velocity -> throttle PID
 SET KpVT TO 0.2. SET KiVT TO 0.4. SET KdVT TO 0.0. SET minimumVT TO 0.1. SET maximumVT TO 1.
+
+
+//forward velocity -> pitch angle PID
+SET KpForeSpeed TO 0.2. SET KiForeSpeed TO 0. SET KdForeSpeed TO 0.0. SET minimumForeSpeed TO -5. SET maximumForeSpeed TO 5.
 //angle -> steering (pitch) ctrl
 SET KpPitch TO 0.1. SET KiPitch TO 0.1. SET KdPitch TO 0.17. SET minimumYAWctrl TO -0.5. SET maximumYAWctrl TO 0.5.
 //angle -> steering (yaw) PID
+
+
 SET KpYaw TO 0.1. SET KiYaw TO 0.0. SET KdYaw TO 0.2. SET minimumYAWctrl TO -1. SET maximumYAWctrl TO 1.
+//lateral velocity -> roll angle PID
+
+
+SET KpLatSpeed TO 0.2. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.0. SET minimumLatSpeed TO -5. SET maximumLatSpeed TO 5.
 //angle -> steering (roll) PID
 SET KpROLL TO 0.02. SET KiROLL TO 0.18. SET KdROLL TO 0.06. SET minimumROLLctrl TO -1. SET maximumROLLctrl TO 1.
+
 
 
 global AltitudeToVelocityPID is PIDLOOP(KpAV, KiAV, KdAV, minimumAV, maximumAV).
@@ -113,10 +124,11 @@ until runmode = 0 {
 	SET tval to VelocityToThrottlePID:UPDATE(TIME:SECONDS, verticalspeed). //PID function for calcualted target velocity -> throttle value
 	lock throttle to tval.
 	
-	//Update Pitch and Yaw PID loops
+	//Update Pitch PID
 	SET pitchPID:SETPOINT to targetPitch.
 	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS, 90 - VECTORANGLE(UP:VECTOR, SHIP:FACING:FOREVECTOR)).
 
+	//Update Yaw PID
 	SET yawPID:SETPOINT to targetYaw.
 	SET SHIP:CONTROL:YAW to yawPID:UPDATE(TIME:SECONDS, headin).
 
