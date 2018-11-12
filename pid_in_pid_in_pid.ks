@@ -59,6 +59,9 @@ SET targetYaw to 0.
 SET previousVelLat to 0.
 SET previousVelLng to 0.
 SET previousTime to time:seconds.
+SET northPole TO latlng(90,0).
+LOCK heading TO mod(360 - northPole:bearing,360).
+
 
 SET error to 0.
 lock steering to up. //TODO comment this out
@@ -72,9 +75,14 @@ until runmode = 0 {
 	lock throttle to tval.
 	
 	//Update Pitch and Yaw PID loops
-	
+	SET pitchPID:SETPOINT to targetRoll.
+	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS,  )).
+
+	SET yawPID:SETPOINT to targetYaw.
+	SET SHIP:CONTROL:YAW to yawPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, heading)).
+
 	//Update Roll PID loop
-	SET rollPID:SETPOINT to targetRoll.
+	SET rollPID:SETPOINT to targetRoll.	
 	SET SHIP:CONTROL:ROLL to rollPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR)).
 	
 	//Fancy terminal pictures
