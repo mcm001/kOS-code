@@ -11,10 +11,9 @@ declare function zeroAccelerationThrottle {
 	return tVal.
 }
 
-declare function targetSpeed {
 
 
-set runmode to -1
+set runmode to -1.
 UNTIL runmode = 0 {
 	if runmode = -1 {
 	lock steering to Up.
