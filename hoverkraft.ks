@@ -63,32 +63,16 @@ SET targetVelocityEast to 0.
 SET targetRoll to 0.
 
 
-
-SET KpAV TO 1.25. //altitude -> velocity PID
-SET KiAV TO 1.5.
-SET KdAV TO 0.
-SET minimumAV TO -30.
-SET maximumAV TO 30.
-SET KpVT TO 1.5. //velocity -> throttle PID
-SET KiVT TO 4.
-SET KdVT TO 0.
-SET minimumVT TO 0.1.
-SET maximumVT TO 1.
-SET KpPitch TO 0.1. //angle -> steering (pitch) ctrl
-SET KiPitch TO 0.1.
-SET KdPitch TO 0.17.
-SET minimumYAWctrl TO -0.5.
-SET maximumYAWctrl TO 0.5.
-SET KpYaw TO 0.1. //angle -> steering (yaw) PID
-SET KiYaw TO 0.0.
-SET KdYaw TO 0.2.
-SET minimumYAWctrl TO -1.
-SET maximumYAWctrl TO 1.
-SET KpROLL TO 0.02. //angle -> steering (roll) PID
-SET KiROLL TO 0.18.
-SET KdROLL TO 0.06.
-SET minimumROLLctrl TO -1.
-SET maximumROLLctrl TO 1.
+//altitude -> velocity PID
+SET KpAV TO 0.4. SET KiAV TO 0.0. SET KdAV TO 0. SET minimumAV TO -20. SET maximumAV TO 80.
+//velocity -> throttle PID
+SET KpVT TO 0.2. SET KiVT TO 0.4. SET KdVT TO 0.0. SET minimumVT TO 0.1. SET maximumVT TO 1.
+//angle -> steering (pitch) ctrl
+SET KpPitch TO 0.1. SET KiPitch TO 0.1. SET KdPitch TO 0.17. SET minimumYAWctrl TO -0.5. SET maximumYAWctrl TO 0.5.
+//angle -> steering (yaw) PID
+SET KpYaw TO 0.1. SET KiYaw TO 0.0. SET KdYaw TO 0.2. SET minimumYAWctrl TO -1. SET maximumYAWctrl TO 1.
+//angle -> steering (roll) PID
+SET KpROLL TO 0.02. SET KiROLL TO 0.18. SET KdROLL TO 0.06. SET minimumROLLctrl TO -1. SET maximumROLLctrl TO 1.
 
 
 global AltitudeToVelocityPID is PIDLOOP(KpAV, KiAV, KdAV, minimumAV, maximumAV).
@@ -102,7 +86,7 @@ brakes on.
 rcs on.
 SET runmode to 1.
 clearscreen.
-SET targetheight to 50. //SET desired height.
+SET targetheight to 300. //SET desired height.
 SET targetRoll to 0. //set target roll
 SET targetPitch to 0.
 SET targetYaw to 90. //target heading
