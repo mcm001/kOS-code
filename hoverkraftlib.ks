@@ -156,11 +156,20 @@ declare function vectorToAngle {
 }
 
 declare function updatePIDloops {
-
+	local parameter initialLat.
+	local parameter initialLng.
 	local parameter targetLat.
 	local parameter targetLng.
 	local parameter targetheight.
 	local parameter targetYaw.
+	local parameter foreSpeed. //minimum and maximum forward velocity
+	local parameter strafeSpeed. //minimum and maximum strafe speed
+ 	local parameter verticalTravelSpeed. //minimum and maximum vertical speed
+
+	// update PID values for vertical, forward and strafe velocities
+	set maximumAV to verticalTravelSpeed. set minimumAV to -verticalTravelSpeed.
+	set maximumForeSpeed to foreSpeed. set minimumForeSpeed to -foreSpeed.
+	set maximumLatSpeed to strafeSpeed. set minimumStrafeSpeed to -strafeSpeed.
 
 	//Update the throttle PID loop
 	SET AltitudeToVelocityPID:SETPOINT TO targetheight. //setpoint for velocity PID. Changes target altitude. Is a constant-ish
@@ -169,19 +178,20 @@ declare function updatePIDloops {
 	lock throttle to tval.
 	
 	//Update Pitch PID with geoposition PID speed
-	
-	Set foreSpeedPID:SETPOINT to -geoForeSpeedPid:UPDATE(TIME:SECONDS, geoposDistance(ship:latitude, ship:longitude, targetLat, targetLng)). // set setpoint of forward velocity
+	SET geoForeSpeedPid:SETPOINT to 0. //we want to be 0 meters forward from the waypoint
+	Set foreSpeedPID:SETPOINT to -geoForeSpeedPid:UPDATE(TIME:SECONDS, calculateForeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)). // set setpoint of forward velocity
 	//set pitch setpoint to output of velocity and input the current forward speed
+	//TODO make sure that the output of calculateforedistancefromgeopos is the correct sign
 	SET pitchPID:SETPOINT to -foreSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:forevector)). 
 	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS, 90 - VECTORANGLE(UP:VECTOR, SHIP:FACING:FOREVECTOR)).
 
 	//Update Yaw PID
-	set latSpeedPID:SETPOINT to targetLatSpeed.
 	SET yawPID:SETPOINT to targetYaw.
 	SET SHIP:CONTROL:YAW to yawPID:UPDATE(TIME:SECONDS, headin).
 
 	//Update Roll PID loop and input lateral velocity
-	SET latSpeedPID:SETPOINT to targetLatSpeed. //set target lateral speed (left rigtht)
+	SET geoStrafeSpeedPid:SETPOINT TO 0. // we want to be 0 meters away from the vector...
+	SET latSpeedPID:SETPOINT to geoStrafeSpeedPid:UPDATE(TIME:SECONDS, calculateStrafeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)).. //set target lateral speed (left rigtht)
 	//update the roll PID with target sideways speed
 	SET rollPID:SETPOINT to latSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:starvector)).
 	SET SHIP:CONTROL:ROLL to rollPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90).
@@ -191,9 +201,9 @@ declare function updatePIDloops {
 
 }
 
-clearscreen.
+// clearscreen.
 // takeoffandsetup().
-initscreen().
+// initscreen().
 
 SET targetZeroSpeedAltitude to 25. //SET target "zero speed altitude" (alt:radar is 19-20 when landed)
 SET landingModeTriggerspeed to -5. //SET speed at which landing mode will be trigggered
@@ -235,7 +245,7 @@ global rollPID is PIDLOOP(KpROLL, KiROLL, KdROLL, minimumROLLctrl, maximumROLLct
 global foreSpeedPID is PIDLOOP(KpForeSpeed, KiForeSpeed, KdPitch, minimumForeSpeed, maximumForeSpeed).
 global latSpeedPID is PIDLOOP(KpLatSpeed, KiLatSpeed, KdLatSpeed, minimumLatSpeed, maximumLatSpeed).
 global geoForeSpeedPid is PIDLOOP(KpGeo, KiGeo, KdGeo, minimumTravelSpeed, maximumTravelSpeed).
-global geoStrafeSpeedPid is PIDLOOP()
+global geoStrafeSpeedPid is PIDLOOP(KpGeoStrafe, KiGeoStrafe, KdGeoStrafe, minimumStrafeSpeed, maximumStrafeSpeed).
 
 SET throttle to 0.
 brakes on.
