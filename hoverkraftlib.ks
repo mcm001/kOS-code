@@ -11,6 +11,22 @@ declare function zeroAccelerationThrottle {
 	return tVal.
 }
 
+declare function latdistance {
+	local parameter currentLat.
+	local parameter currentLng.
+	local parameter targetLat.
+	local parameter targetLng.
+
+	// from https://www.reddit.com/r/Kos/comments/438e1o/converting_latitudelongitude_to_distance_in_meters/
+	set vector1 to latlng(currentLat,currentLng):position - ship:body:position. // vector from body center to spot on surface.
+	set vector2 to latlng(targetLat,targetLng):position - ship:body:position. // vector from body center to spot on surface.
+	set theta to vang(vector1, vector2). // angle between the vectors.
+	set circDist to theta * constant:degtorad * body:radius. // distance of the circumference arc between the two vectors on a circle of the body's radius.
+
+	return circDist.
+
+}
+
 declare function twrToThrottle {
 	declare local parameter twr.
 	declare local tVal is (twr * zeroAccelerationThrottle()).
@@ -153,7 +169,7 @@ SET KpPitch TO 0.15. SET KiPitch TO 0.1. SET KdPitch TO 0.17. SET minimumYAWctrl
 SET KpYaw TO 0.1. SET KiYaw TO 0.0. SET KdYaw TO 0.2. SET minimumYAWctrl TO -1. SET maximumYAWctrl TO 1.
 
 //lateral velocity -> roll angle PID
-SET KpLatSpeed TO 2. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.0. SET minimumLatSpeed TO -20. SET maximumLatSpeed TO 20.
+SET KpLatSpeed TO 0.8. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.2. SET minimumLatSpeed TO -20. SET maximumLatSpeed TO 20.
 //angle -> steering (roll) PID
 SET KpROLL TO 0.02. SET KiROLL TO 0.18. SET KdROLL TO 0.06. SET minimumROLLctrl TO -1. SET maximumROLLctrl TO 1.
 
@@ -195,7 +211,7 @@ rcs off.
 
 until runmode = 0 {
 
-	updatePIDloops()
+	updatePIDloops().
 	updatescreen().
 
 }

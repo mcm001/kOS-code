@@ -4,12 +4,12 @@ declare function changeAltitude {
     local parameter targetAltitude.
     local parameter targetHeading.
     
-    set targetLat to ship:lat.//TODO current altitude
-    set targetLng to ship:lng.// TODO set curent longiude
+    set targetLat to SHIP:LATITUDE.
+    set targetLng to ship:SHIP:LONGITUDE.
 
-    set xy_tolerence to 10. //10 feet tolerence
+    set xy_tolerence to 10. // n meter tolerence in x and y
 
-    until distance(ship:lat, ship:lng, targetLat, targetLng) < 10 and abs(alt:radar - targetAltitude) < 2 {
+    until latdistance(ship:lat, ship:lng, targetLat, targetLng) < 10 and abs(alt:radar - targetAltitude) < 2 {
         updatePIDloops(targetLat, targetLng, targetAltitude, targetHeading).
     }
 
