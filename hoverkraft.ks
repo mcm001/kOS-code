@@ -61,6 +61,13 @@ declare function initscreen{
 }
 
 declare function updatescreen {
+
+	//Calculate error
+	SET error to (alt:radar - AltitudeToVelocityPID:SETPOINT).
+	SET velocityError to (verticalspeed - VelocityToThrottlePID:SETPOINT).
+	set rollError to ((VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90) - rollPID:SETPOINT ).
+
+	// update printed values
 	print(round((ship:velocity:surface * ship:facing:forevector), 2)) at (11,1).
 	print(round(targetForeSpeed, 2)) at (28,1).
 	print(round(foreSpeedPID:OUTPUT, 4)) at (49,1).
@@ -94,6 +101,30 @@ declare function updatescreen {
 
 }
 
+declare function updatePIDloops {
+	//Update the throttle PID loop
+	SET AltitudeToVelocityPID:SETPOINT TO targetheight. //setpoint for velocity PID. Changes target altitude. Is a constant-ish
+	SET VelocityToThrottlePID:SETPOINT TO AltitudeToVelocityPID:UPDATE(TIME:SECONDS, alt:radar). //PID function for position -> velocity. and SETPOINT for throttle PID, calculated by velocity PID loop.
+	SET tval to VelocityToThrottlePID:UPDATE(TIME:SECONDS, verticalspeed). //PID function for calcualted target velocity -> throttle value
+	lock throttle to tval.
+	
+	//Update Pitch PID
+	Set foreSpeedPID:SETPOINT to targetForeSpeed. // set setpoint of forward velocity
+	//set pitch setpoint to output of velocity and input the current forward speed
+	SET pitchPID:SETPOINT to -foreSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:forevector)). 
+	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS, 90 - VECTORANGLE(UP:VECTOR, SHIP:FACING:FOREVECTOR)).
+
+	//Update Yaw PID
+	set latSpeedPID:SETPOINT to targetLatSpeed.
+	SET yawPID:SETPOINT to targetYaw.
+	SET SHIP:CONTROL:YAW to yawPID:UPDATE(TIME:SECONDS, headin).
+
+	//Update Roll PID loop and input lateral velocity
+	SET latSpeedPID:SETPOINT to targetLatSpeed. //set target lateral speed (left rigtht)
+	//update the roll PID with target sideways speed
+	SET rollPID:SETPOINT to latSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:starvector)).
+	SET SHIP:CONTROL:ROLL to rollPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90).
+}
 
 clearscreen.
 // takeoffandsetup().
@@ -164,40 +195,9 @@ rcs off.
 
 until runmode = 0 {
 
-	//Update the throttle PID loop
-	SET AltitudeToVelocityPID:SETPOINT TO targetheight. //setpoint for velocity PID. Changes target altitude. Is a constant-ish
-	SET VelocityToThrottlePID:SETPOINT TO AltitudeToVelocityPID:UPDATE(TIME:SECONDS, alt:radar). //PID function for position -> velocity. and SETPOINT for throttle PID, calculated by velocity PID loop.
-	SET tval to VelocityToThrottlePID:UPDATE(TIME:SECONDS, verticalspeed). //PID function for calcualted target velocity -> throttle value
-	lock throttle to tval.
-	
-	//Update Pitch PID
-	Set foreSpeedPID:SETPOINT to targetForeSpeed. // set setpoint of forward velocity
-	//set pitch setpoint to output of velocity and input the current forward speed
-	SET pitchPID:SETPOINT to -foreSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:forevector)). 
-	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS, 90 - VECTORANGLE(UP:VECTOR, SHIP:FACING:FOREVECTOR)).
-
-	//Update Yaw PID
-	set latSpeedPID:SETPOINT to targetLatSpeed.
-	SET yawPID:SETPOINT to targetYaw.
-	SET SHIP:CONTROL:YAW to yawPID:UPDATE(TIME:SECONDS, headin).
-
-	//Update Roll PID loop and input lateral velocity
-	SET latSpeedPID:SETPOINT to targetLatSpeed. //set target lateral speed (left rigtht)
-	//update the roll PID with target sideways speed
-	SET rollPID:SETPOINT to latSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:starvector)).
-	SET SHIP:CONTROL:ROLL to rollPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90).
-	
-	//Fancy terminal pictures
-	SET error to (alt:radar - AltitudeToVelocityPID:SETPOINT).
-	SET velocityError to (verticalspeed - VelocityToThrottlePID:SETPOINT).
-	set rollError to ((VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90) - rollPID:SETPOINT ).
+	updatePIDloops()
 	updatescreen().
 
-	// wait 0.01.
-
-	on ag2 {
-		set runmode to 0.
-	}
 }
 
 
