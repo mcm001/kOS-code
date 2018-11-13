@@ -125,7 +125,7 @@ declare function calculateForeDistanceFromGeopos {
 
 	local vectorDistance is geoposDistance(startLat, startLng, endLat, endLng).
 
-	return vectorDistance * sin(90-vectorToAngle(latlng(endLat, endLng))).
+	return vectorDistance * sin(90-vectorToAngle(endLat, endLng)).
 }
 
 declare function calculateStrafeDistanceFromGeopos {

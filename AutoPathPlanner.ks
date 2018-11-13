@@ -1,8 +1,10 @@
+switch to 0.
 run once hoverkraftlib.ks.
+clearscreen.
 initscreen().
 
-stage.
-switch to 0. run AutoPathPlanner.ks.
+// stage.
+// switch to 0. run AutoPathPlanner.ks.
 
 declare function changeAltitude {
     local parameter targetAltitude.
@@ -21,6 +23,9 @@ declare function changeAltitude {
         updatePIDloops(initialLat, initialLng, targetLat, targetLng, targetAltitude, targetHeading, 10, 1, 10).
         print(geoposDistance(ship:LATITUDE, ship:LONGITUDE, targetLat, targetLng)) at (0,25).
         print(abs(alt:radar - targetAltitude)) at (0,26).
+
+        wait 0.1.
+
     }
     print("done!").
 }
