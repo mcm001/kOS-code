@@ -11,7 +11,7 @@ declare function zeroAccelerationThrottle {
 	return tVal.
 }
 
-declare function latdistance {
+declare function geoposDistance {
 	local parameter currentLat.
 	local parameter currentLng.
 	local parameter targetLat.
@@ -117,15 +117,60 @@ declare function updatescreen {
 
 }
 
+declare function calculateForeDistanceFromGeopos {
+	local parameter startLat.
+	local parameter startLng.
+	local parameter endLat.
+	local parameter endLng.
+
+	local vectorDistance is geoposDistance(startLat, startLng, endLat, endLng).
+
+	return vectorDistance * sin(90-vectorToAngle(latlng(endLat, endLng))).
+}
+
+declare function calculateStrafeDistanceFromGeopos {
+	local parameter startLat.
+	local parameter startLng.
+	local parameter endLat.
+	local parameter endLng.
+
+	local vectorDistance is geoposDistance(startLat, startLng, endLat, endLng).
+
+	return vectorDistance * cos(90-vectorToAngle(endLat, endLng)).
+}
+
+declare function vectorToAngle {
+	local parameter lat.
+	local parameter lng.
+	set input_vector to latlng(lat,lng):position.
+    set up_versor to ship:up:vector.
+    set north_versor to ship:north:vector.
+    set east_versor to  vcrs(up_versor, north_versor).
+	set east_vel to vdot(input_vector, east_versor). 
+	set north_vel to vdot(input_vector, north_versor).
+	set compass to arctan2(east_vel, north_vel).
+    if compass < 0 {
+        set compass to compass + 360.
+    }
+	return compass.
+}
+
 declare function updatePIDloops {
+
+	local parameter targetLat.
+	local parameter targetLng.
+	local parameter targetheight.
+	local parameter targetYaw.
+
 	//Update the throttle PID loop
 	SET AltitudeToVelocityPID:SETPOINT TO targetheight. //setpoint for velocity PID. Changes target altitude. Is a constant-ish
 	SET VelocityToThrottlePID:SETPOINT TO AltitudeToVelocityPID:UPDATE(TIME:SECONDS, alt:radar). //PID function for position -> velocity. and SETPOINT for throttle PID, calculated by velocity PID loop.
 	SET tval to VelocityToThrottlePID:UPDATE(TIME:SECONDS, verticalspeed). //PID function for calcualted target velocity -> throttle value
 	lock throttle to tval.
 	
-	//Update Pitch PID
-	Set foreSpeedPID:SETPOINT to targetForeSpeed. // set setpoint of forward velocity
+	//Update Pitch PID with geoposition PID speed
+	
+	Set foreSpeedPID:SETPOINT to -geoForeSpeedPid:UPDATE(TIME:SECONDS, geoposDistance(ship:latitude, ship:longitude, targetLat, targetLng)). // set setpoint of forward velocity
 	//set pitch setpoint to output of velocity and input the current forward speed
 	SET pitchPID:SETPOINT to -foreSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:forevector)). 
 	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS, 90 - VECTORANGLE(UP:VECTOR, SHIP:FACING:FOREVECTOR)).
@@ -140,6 +185,10 @@ declare function updatePIDloops {
 	//update the roll PID with target sideways speed
 	SET rollPID:SETPOINT to latSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:starvector)).
 	SET SHIP:CONTROL:ROLL to rollPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90).
+
+	updatescreen().
+
+
 }
 
 clearscreen.
@@ -156,7 +205,7 @@ SET targetRoll to 0.
 
 
 //altitude -> velocity PID
-SET KpAV TO 0.4. SET KiAV TO 0.0. SET KdAV TO 0. SET minimumAV TO -20. SET maximumAV TO 80.
+SET KpAV TO 0.4. SET KiAV TO 0.0. SET KdAV TO 0. SET minimumAV TO -20. SET maximumAV TO 20.
 //velocity -> throttle PID
 SET KpVT TO 0.2. SET KiVT TO 0.4. SET KdVT TO 0.0. SET minimumVT TO 0.1. SET maximumVT TO 1.
 
@@ -171,9 +220,12 @@ SET KpYaw TO 0.1. SET KiYaw TO 0.0. SET KdYaw TO 0.2. SET minimumYAWctrl TO -1. 
 //lateral velocity -> roll angle PID
 SET KpLatSpeed TO 0.8. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.2. SET minimumLatSpeed TO -20. SET maximumLatSpeed TO 20.
 //angle -> steering (roll) PID
-SET KpROLL TO 0.02. SET KiROLL TO 0.18. SET KdROLL TO 0.06. SET minimumROLLctrl TO -1. SET maximumROLLctrl TO 1.
+SET KpROLL TO 0.02. SET KiROLL TO 0.1. SET KdROLL TO 0.06. SET minimumROLLctrl TO -0.3. SET maximumROLLctrl TO 0.3.
 
-
+//lat-lng -> forward speed PID loop
+SET KpGeo to 1.0. SET KiGeo to 0. SET KdGeo to 0. SET minimumTravelSpeed to -1. SET maximumTravelSpeed to 20.
+//lat-lng -> strafe speed PID loop
+SET KpGeoStrafe to 1.0. SET KiGeoStrafe to 0. SET KdGeoStrafe to 0. SET minimumStrafeSpeed to -1. SET maximumStrafeSpeed to  1.
 
 global AltitudeToVelocityPID is PIDLOOP(KpAV, KiAV, KdAV, minimumAV, maximumAV).
 global VelocityToThrottlePID is PIDLOOP(KpVT, KiVT, KdVT, minimumVT, maximumVT). //PID stuff
@@ -182,8 +234,8 @@ global yawPID is PIDLOOP(KpYaw, KiYaw, KdYaw, minimumYAWctrl, maximumYAWctrl).
 global rollPID is PIDLOOP(KpROLL, KiROLL, KdROLL, minimumROLLctrl, maximumROLLctrl).
 global foreSpeedPID is PIDLOOP(KpForeSpeed, KiForeSpeed, KdPitch, minimumForeSpeed, maximumForeSpeed).
 global latSpeedPID is PIDLOOP(KpLatSpeed, KiLatSpeed, KdLatSpeed, minimumLatSpeed, maximumLatSpeed).
-
-
+global geoForeSpeedPid is PIDLOOP(KpGeo, KiGeo, KdGeo, minimumTravelSpeed, maximumTravelSpeed).
+global geoStrafeSpeedPid is PIDLOOP()
 
 SET throttle to 0.
 brakes on.
@@ -209,12 +261,12 @@ rcs off.
 // lock steering to up. //TODO comment this out
 // stage.
 
-until runmode = 0 {
+// until runmode = 0 {
 
-	updatePIDloops().
-	updatescreen().
+// 	updatePIDloops().
+// 	updatescreen().
 
-}
+// }
 
 
 
