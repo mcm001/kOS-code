@@ -85,7 +85,7 @@ declare function updatescreen {
 
 	// update printed values
 	print(round((ship:velocity:surface * ship:facing:forevector), 2)) at (11,1).
-	print(round(targetForeSpeed, 2)) at (28,1).
+	print(round(foreSpeedPID:SETPOINT, 2)) at (28,1).
 	print(round(foreSpeedPID:OUTPUT, 4)) at (49,1).
 
 	print(round(pitchPID:SETPOINT, 2)) at (28,4).
@@ -179,11 +179,13 @@ declare function updatePIDloops {
 	
 	//Update Pitch PID with geoposition PID speed
 	SET geoForeSpeedPid:SETPOINT to 0. //we want to be 0 meters forward from the waypoint
-	Set foreSpeedPID:SETPOINT to -geoForeSpeedPid:UPDATE(TIME:SECONDS, calculateForeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)). // set setpoint of forward velocity
+	Set foreSpeedPID:SETPOINT to 0. //geoForeSpeedPid:UPDATE(TIME:SECONDS, calculateForeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)). // set setpoint of forward velocity
 	//set pitch setpoint to output of velocity and input the current forward speed
 	//TODO make sure that the output of calculateforedistancefromgeopos is the correct sign
 	SET pitchPID:SETPOINT to -foreSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:forevector)). 
 	SET SHIP:CONTROL:PITCH to pitchPID:UPDATE(TIME:SECONDS, 90 - VECTORANGLE(UP:VECTOR, SHIP:FACING:FOREVECTOR)).
+
+	print(" fore distance to travel: " + calculateForeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)) at (0,27).
 
 	//Update Yaw PID
 	SET yawPID:SETPOINT to targetYaw.
@@ -191,10 +193,13 @@ declare function updatePIDloops {
 
 	//Update Roll PID loop and input lateral velocity
 	SET geoStrafeSpeedPid:SETPOINT TO 0. // we want to be 0 meters away from the vector...
-	SET latSpeedPID:SETPOINT to geoStrafeSpeedPid:UPDATE(TIME:SECONDS, calculateStrafeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)).. //set target lateral speed (left rigtht)
+	SET latSpeedPID:SETPOINT to 0. //-geoStrafeSpeedPid:UPDATE(TIME:SECONDS, calculateStrafeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)). //set target lateral speed (left rigtht)
 	//update the roll PID with target sideways speed
 	SET rollPID:SETPOINT to latSpeedPID:UPDATE(TIME:SECONDS, (ship:velocity:surface * ship:facing:starvector)).
 	SET SHIP:CONTROL:ROLL to rollPID:UPDATE(TIME:SECONDS, VECTORANGLE(UP:VECTOR, SHIP:FACING:STARVECTOR) - 90).
+
+	print(" distance to strafe: " + calculateStrafeDistanceFromGeopos(SHIP:LATITUDE, SHIP:LONGITUDE, targetLat, targetLng)) at (0,28).
+	// print(" ").
 
 	updatescreen().
 
@@ -233,9 +238,9 @@ SET KpLatSpeed TO 0.8. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.2. SET minimumLa
 SET KpROLL TO 0.02. SET KiROLL TO 0.1. SET KdROLL TO 0.06. SET minimumROLLctrl TO -0.3. SET maximumROLLctrl TO 0.3.
 
 //lat-lng -> forward speed PID loop
-SET KpGeo to 1.0. SET KiGeo to 0. SET KdGeo to 0. SET minimumTravelSpeed to -1. SET maximumTravelSpeed to 20.
+SET KpGeo to 0.1. SET KiGeo to 0. SET KdGeo to 0. SET minimumTravelSpeed to -1. SET maximumTravelSpeed to 20.
 //lat-lng -> strafe speed PID loop
-SET KpGeoStrafe to 1.0. SET KiGeoStrafe to 0. SET KdGeoStrafe to 0. SET minimumStrafeSpeed to -1. SET maximumStrafeSpeed to  1.
+SET KpGeoStrafe to 0.1. SET KiGeoStrafe to 0. SET KdGeoStrafe to 0. SET minimumStrafeSpeed to -1. SET maximumStrafeSpeed to  1.
 
 global AltitudeToVelocityPID is PIDLOOP(KpAV, KiAV, KdAV, minimumAV, maximumAV).
 global VelocityToThrottlePID is PIDLOOP(KpVT, KiVT, KdVT, minimumVT, maximumVT). //PID stuff
