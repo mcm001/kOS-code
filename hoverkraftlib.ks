@@ -225,7 +225,7 @@ SET KpAV TO 0.4. SET KiAV TO 0.0. SET KdAV TO 0. SET minimumAV TO -20. SET maxim
 SET KpVT TO 0.2. SET KiVT TO 0.4. SET KdVT TO 0.0. SET minimumVT TO 0.1. SET maximumVT TO 1.
 
 //forward velocity -> pitch angle PID
-SET KpForeSpeed TO 1. SET KiForeSpeed TO 0. SET KdForeSpeed TO 0.0. SET minimumForeSpeed TO -20. SET maximumForeSpeed TO 20.
+SET KpForeSpeed TO 1.5. SET KiForeSpeed TO 0. SET KdForeSpeed TO 0.0. SET minimumForeSpeed TO -20. SET maximumForeSpeed TO 20.
 //angle -> steering (pitch) ctrl
 SET KpPitch TO 0.15. SET KiPitch TO 0.1. SET KdPitch TO 0.17. SET minimumYAWctrl TO -0.5. SET maximumYAWctrl TO 0.5.
 
@@ -235,7 +235,7 @@ SET KpYaw TO 0.1. SET KiYaw TO 0.0. SET KdYaw TO 0.2. SET minimumYAWctrl TO -1. 
 //lateral velocity -> roll angle PID
 SET KpLatSpeed TO 0.8. SET KiLatSpeed TO 0. SET KdLatSpeed TO 0.2. SET minimumLatSpeed TO -20. SET maximumLatSpeed TO 20.
 //angle -> steering (roll) PID
-SET KpROLL TO 0.02. SET KiROLL TO 0.1. SET KdROLL TO 0.06. SET minimumROLLctrl TO -0.3. SET maximumROLLctrl TO 0.3.
+SET KpROLL TO 0.02. SET KiROLL TO 0.05. SET KdROLL TO 0.1. SET minimumROLLctrl TO -0.3. SET maximumROLLctrl TO 0.3.
 
 //lat-lng -> forward speed PID loop
 SET KpGeo to 0.1. SET KiGeo to 0. SET KdGeo to 0. SET minimumTravelSpeed to -1. SET maximumTravelSpeed to 20.
